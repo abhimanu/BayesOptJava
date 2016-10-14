@@ -57,9 +57,11 @@ public class GPRegression{
 		// Load train data
 		DoubleMatrix[] dataTrain = LoadDataInMatrix.load("gpml1Ddemo1st.csv",1,1);
 		DoubleMatrix[] dataTest = LoadDataInMatrix.load("gpml1Ddemo1stTestX.csv",1,0);
+		GPRegression gpReg = new GPRegression();
+		gpReg.getGPpredictions(dataTrain, dataTest);
 	}
 
-	public getGPpredictions(DoubleMatrix[] dataTrain, DoubleMatrix[] dataTest)
+	public DoubleMatrix getGPpredictions(DoubleMatrix[] dataTrain, DoubleMatrix[] dataTest){
 		GPRegression gpr = new GPRegression();
 		double meanLin = 0.5, meanConst = 1;
 		double log_sigma = Math.log(1), log_ell = Math.log(0.25), log_sigma_n = Math.log(0.1); 
@@ -102,6 +104,8 @@ public class GPRegression{
 		//System.out.println(data[0].rows+" "+data[0].columns);
 		//System.out.println(data[0].getRow(0));
 		//
+
+		return F_bar;
 	}
 
 }
