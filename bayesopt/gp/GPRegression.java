@@ -1,13 +1,20 @@
 package bayesopt.gp; 
 
 import java.util.*;
+import java.util.logging.*;
 
 import org.jblas.*;
 import bayesopt.utility.LoadDataInMatrix;
 
 import org.rosuda.JRI.Rengine;
 
+
+
 public class GPRegression{
+
+	private final static Logger LOGGER = Logger.getLogger("BayesOptLogger");
+
+	private boolean plotPrediction = false;
 
 	private DoubleMatrix getSquaredDistance (DoubleMatrix X1, DoubleMatrix X2){
 		DoubleMatrix squared_distance = Geometry.pairwiseSquaredDistances(X1.transpose(), X2.transpose());
@@ -27,7 +34,7 @@ public class GPRegression{
 			for (int i=0; i<kernelSize1; i++){
 				for (int j=1; j<=i && j<kernelSize2; j++){	// we start from j=1
 					double d = Math.sqrt(3*covariance.get(i,j));		// Matern for p=1 and nu=3/2 
-					System.out.println("d/ell:"+(1+d/ell)+"; Math.exp(-d/ell):"+Math.exp(-d/ell));
+					//LOGGER.info("d/ell:"+(1+d/ell)+"; Math.exp(-d/ell):"+Math.exp(-d/ell));
 					covariance.put(i,j, sigma2*(1+d/ell)*Math.exp(-d/ell));
 					if (i<kernelSize2){
 						covariance.put(j,i, sigma2*(1+d/ell)*Math.exp(-d/ell));
@@ -58,7 +65,12 @@ public class GPRegression{
 		DoubleMatrix[] dataTrain = LoadDataInMatrix.load("gpml1Ddemo1st.csv",1,1);
 		DoubleMatrix[] dataTest = LoadDataInMatrix.load("gpml1Ddemo1stTestX.csv",1,0);
 		GPRegression gpReg = new GPRegression();
+		gpReg.plotPrediction = true;
 		gpReg.getGPpredictions(dataTrain, dataTest);
+	}
+
+	public void setPlotPrediction(boolean flag){
+		plotPrediction = flag;
 	}
 
 	public DoubleMatrix getGPpredictions(DoubleMatrix[] dataTrain, DoubleMatrix[] dataTest){
@@ -73,37 +85,30 @@ public class GPRegression{
 		double lambda = Math.exp(2*log_sigma_n);
 		K.addi(DoubleMatrix.eye(N).muli(lambda));
 		DoubleMatrix alpha = Solve.solveSymmetric(K, Ytrain.sub(meanTrain));
-		//System.out.println("print the test data");
-		//System.out.println(dataTest[0]);
+		//LOGGER.info("print the test data");
+		//LOGGER.info(dataTest[0]);
 		DoubleMatrix K_star = gpr.getCovarianceKernel(dataTrain[0], dataTest[0], log_sigma, log_ell) ;		// K(X,X*) 
 		DoubleMatrix F_bar = K_star.transpose().mmul(alpha);
 		DoubleMatrix meanTest = dataTest[0].mul(meanLin);
 		meanTest.addi(meanConst);
 		F_bar.addi(meanTest);
-        System.out.println(Arrays.toString(F_bar.toArray()));
-		System.out.println(F_bar.getRows());
-		// new R-engine
-		Rengine engine = new Rengine (new String [] {"–vanilla"}, false, null);
-		engine.assign("yTest", F_bar.toArray());
-		engine.assign("xTest", dataTest[0].toArray());
-		engine.assign("yTrain", dataTrain[1].toArray());
-		engine.assign("xTrain", dataTrain[0].toArray());
-		engine.eval("png(file='TestFile.png');");
-		engine.eval("library(ggplot2);");
-		engine.eval("temp <- plot(xTrain, yTrain, pch='+');");
-		engine.eval("temp <- lines(xTest, yTest);");
-		engine.eval("print temp;");
-		engine.eval("dev.off();");
-		engine.end();
-		System.out.println("engine::: "+engine);
-		//DoubleMatrix L = gpr.getCholesky(K);
-		// Load test data
-		//DoubleMatrix[] dataTest = LoadDataInMatrix.load("armdatastar.csv",6,1);
-		
-		//data[0].print();
-		//System.out.println(data[0].rows+" "+data[0].columns);
-		//System.out.println(data[0].getRow(0));
-		//
+		if (plotPrediction){
+			LOGGER.info(Arrays.toString(F_bar.toArray()));
+			LOGGER.info(""+F_bar.getRows());
+			// new R-engine
+			Rengine engine = new Rengine (new String [] {"–vanilla"}, false, null);
+			engine.assign("yTest", F_bar.toArray());
+			engine.assign("xTest", dataTest[0].toArray());
+			engine.assign("yTrain", dataTrain[1].toArray());
+			engine.assign("xTrain", dataTrain[0].toArray());
+			engine.eval("png(file='TestFile.png');");
+			engine.eval("library(ggplot2);");
+			engine.eval("temp <- plot(xTrain, yTrain, pch='+');");
+			engine.eval("temp <- lines(xTest, yTest);");
+			engine.eval("print temp;");
+			engine.eval("dev.off();");
+			engine.end();
+		}
 
 		return F_bar;
 	}

@@ -12,12 +12,15 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.logging.*;
 
 
 /**
  * Simple Class to load the example data from files straight into Matrices.
  */
 public class LoadDataInMatrix {
+
+	private final static Logger LOGGER = Logger.getLogger("BayesOptLogger");
 
     /**
      * Load data
@@ -26,7 +29,6 @@ public class LoadDataInMatrix {
      * @param sizeofOutputs
      * @return  [X, Y]
      */
-    //public static Matrix[] load(String filename,int sizeofInputs, int sizeofOutputs){
     public static DoubleMatrix[] load(String filename,int sizeofInputs, int sizeofOutputs){
 
         ArrayList<double[]> inputsList = new ArrayList<double[]>();
@@ -36,7 +38,7 @@ public class LoadDataInMatrix {
         try {
             br = new BufferedReader(new FileReader(filename));
         } catch (FileNotFoundException e) {
-            System.out.println("error: file " + filename + " not found.");
+            LOGGER.info("error: file " + filename + " not found.");
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
@@ -51,7 +53,7 @@ public class LoadDataInMatrix {
             try {
                 readLine = br.readLine();
             } catch (IOException e) {
-                System.out.println("error: reading from " + filename + ".");
+                LOGGER.info("error: reading from " + filename + ".");
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
 
@@ -84,7 +86,7 @@ public class LoadDataInMatrix {
                     outputsList.add(out);
                 }
                 catch (Exception e) {
-                    System.out.println(e + "\nerror: this line in the logfile does not agree with the configuration provided... it will be skipped");
+                    LOGGER.info(e + "\nerror: this line in the logfile does not agree with the configuration provided... it will be skipped");
                     datasize--;
                 }
             }
@@ -96,7 +98,6 @@ public class LoadDataInMatrix {
         inputsList.toArray(inmat);
         outputsList.toArray(outmat);
 
-        //return new []{new Matrix(inmat), new Matrix(outmat)};
         return new DoubleMatrix[]{new DoubleMatrix(inmat), new DoubleMatrix(outmat)};
     }
 
@@ -107,9 +108,6 @@ public class LoadDataInMatrix {
     public static void main(String[] args) {
 
 
-//       DoubleMatrix[] data = LoadDataToMatrix.load("armdata.csv",6,1);
-//
-//	   data[0].print();
        
      }
 
