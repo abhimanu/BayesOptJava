@@ -60,9 +60,9 @@ class ExperimentGrid:
         self.locker   = Locker()
 
         # Only one process at a time is allowed to have access to this.
-        sys.stderr.write("Waiting to lock grid...")
-        self.locker.lock_wait(self.jobs_pkl)
-        sys.stderr.write("...acquired\n")
+        #sys.stderr.write("Waiting to lock grid...")
+        #self.locker.lock_wait(self.jobs_pkl)
+        #sys.stderr.write("...acquired\n")
 
         # Does this exist already?
         if variables is not None and not os.path.exists(self.jobs_pkl):
@@ -85,10 +85,10 @@ class ExperimentGrid:
 
     def __del__(self):
         self._save_jobs()
-        if self.locker.unlock(self.jobs_pkl):
-            sys.stderr.write("Released lock on job grid.\n")
-        else:
-            raise Exception("Could not release lock on job grid.\n")
+        #if self.locker.unlock(self.jobs_pkl):
+        #    sys.stderr.write("Released lock on job grid.\n")
+        #else:
+        #    raise Exception("Could not release lock on job grid.\n")
 
     def get_grid(self):
         return self.grid, self.values, self.durs
@@ -224,6 +224,33 @@ class GridMap:
                 raise Exception("Unknown parameter type.")
         sys.stderr.write("Optimizing over %d dimensions\n" % (self.cardinality))
     
+    def get_datapoint_original(self, u):
+        if u.shape[0] != self.cardinality:
+            raise Exception("Hypercube dimensionality is incorrect.")
+        param = []
+        index  = 0
+        for variable in self.variables:
+            if variable['type'] == 'int':
+                for dd in xrange(variable['size']):
+                    param.append(variable['min'] + self._index_map(u[index], variable['max']-variable['min']+1))
+                    index += 1
+
+            elif variable['type'] == 'float':
+                for dd in xrange(variable['size']):
+                    param.append(variable['min'] + u[index]*(variable['max']-variable['min']))
+                    index += 1
+
+            elif variable['type'] == 'enum':
+                for dd in xrange(variable['size']):
+                    ii = self._index_map(u[index], len(variable['options']))
+                    index += 1
+                    param.append(variable['options'][ii])
+
+            else:
+                raise Exception("Unknown parameter type.")
+        
+        return param
+		
     def get_params(self, u):
         if u.shape[0] != self.cardinality:
             raise Exception("Hypercube dimensionality is incorrect.")
@@ -234,7 +261,7 @@ class GridMap:
             param = Parameter()
             
             param.name = variable['name']
-
+            #param.type = variable['type']
             if variable['type'] == 'int':
                 for dd in xrange(variable['size']):
                     param.int_val.append(variable['min'] + self._index_map(u[index], variable['max']-variable['min']+1))
@@ -262,4 +289,5 @@ class GridMap:
         return self.cardinality
 
     def _index_map(self, u, items):
+        #print "(abhi) In _index_map items:", items, "u: ", u
         return int(np.floor((1-np.finfo(float).eps) * u * float(items)))
